@@ -11,9 +11,7 @@ const Hero = () => {
   const lampRef = useRef<HTMLImageElement | null>(null);
   const booksRef = useRef<HTMLImageElement[]>([]);
 
-  /* ===============================
-     ENTRY ANIMATION
-  =============================== */
+  // ENTRY ANIMATION
   useGSAP(() => {
     const tl = gsap.timeline({ ease: "power3.out" });
 
@@ -27,7 +25,7 @@ const Hero = () => {
 
     gsap.set([".book", ".info-bar"], {
       rotation: 0,
-      transformOrigin: "center center"
+      transformOrigin: "center center",
     });
 
     const bookTimeline = gsap.timeline({ delay: 1.5 });
@@ -36,7 +34,7 @@ const Hero = () => {
       x: 0,
       rotation: -10,
       duration: 1.2,
-      ease: "back.out(1.7)"
+      ease: "back.out(1.7)",
     });
 
     bookTimeline.to(
@@ -45,7 +43,7 @@ const Hero = () => {
         x: 0,
         rotation: -10,
         duration: 1.2,
-        ease: "back.out(1.7)"
+        ease: "back.out(1.7)",
       },
       "-=0.8"
     );
@@ -55,36 +53,37 @@ const Hero = () => {
       {
         x: -20,
         duration: 1,
-        ease: "power2.out"
+        ease: "power2.out",
       },
       "-=0.6"
     );
   }, []);
 
-  /* ===============================
-     LAMPU BANDUL SMOOTH
-  =============================== */
+  // ======================================================
+  // LAMPU BANDUL SUPER SMOOTH (TypeScript SAFE)
+  // ======================================================
   useEffect(() => {
     const lamp = lampRef.current;
-    if (!lamp) return undefined;
+    if (!lamp) return;
 
     gsap.set(lamp, { transformOrigin: "50% 0%" });
 
     let mouseX = 0;
+    let mouseY = 0;
 
     const idleSwing = gsap.to(lamp, {
       rotate: 3,
       duration: 3,
       yoyo: true,
       repeat: -1,
-      ease: "sine.inOut"
+      ease: "sine.inOut",
     });
 
     const animate = () => {
       const rect = lamp.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
-
       const dx = mouseX - cx;
+
       const dist = Math.abs(dx);
       const influence = Math.min(dist / 150, 1);
 
@@ -95,29 +94,33 @@ const Hero = () => {
         rotate: sway,
         duration: 0.6,
         ease: "power2.out",
-        overwrite: "auto"
+        overwrite: "auto",
       });
 
       requestAnimationFrame(animate);
     };
 
-    window.addEventListener("mousemove", e => {
+    const handleMove = (e: MouseEvent) => {
       mouseX = e.clientX;
-    });
+      mouseY = e.clientY;
+    };
 
+    window.addEventListener("mousemove", handleMove);
     requestAnimationFrame(animate);
 
-    return () => idleSwing.kill();
+    // cleanup
+    return () => {
+      idleSwing.kill();
+      window.removeEventListener("mousemove", handleMove);
+    };
   }, []);
 
-  /* ===============================
-     BOOK HOVER EFFECT (SAFE TYPE)
-  =============================== */
+  // ==================================================
+  // BUKU HOVER FALLING EFFECT
+  // ==================================================
   useEffect(() => {
     const books = booksRef.current;
-
-    // FIX: bisa null → tidak error
-    let bookAnimations: Array<gsap.core.Tween | null> = [];
+    const bookAnimations: Array<gsap.core.Tween | null> = [];
 
     const handleBookHover = (e: MouseEvent) => {
       const mouseX = e.clientX;
@@ -125,13 +128,15 @@ const Hero = () => {
 
       books.forEach((book, index) => {
         const rect = book.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
+        const bx = rect.left + rect.width / 2;
+        const by = rect.top + rect.height / 2;
 
-        const distance = Math.sqrt((mouseX - cx) ** 2 + (mouseY - cy) ** 2);
+        const dist = Math.sqrt((mouseX - bx) ** 2 + (mouseY - by) ** 2);
 
-        if (distance < 120) {
-          bookAnimations[index]?.kill();
+        if (dist < 120) {
+          if (bookAnimations[index]) {
+            bookAnimations[index]!.kill();
+          }
 
           const pushX = (Math.random() - 0.5) * 50;
           const pushY = -25 - Math.random() * 15;
@@ -140,25 +145,25 @@ const Hero = () => {
           const tl = gsap.timeline();
 
           tl.to(book, {
-            x: "+=" + pushX,
-            y: "+=" + pushY,
-            rotation: "+=" + rotation,
+            x: `+=${pushX}`,
+            y: `+=${pushY}`,
+            rotation: `+=${rotation}`,
             duration: 0.3,
             ease: "power2.out",
-            zIndex: 100
+            zIndex: 100,
           })
             .to(book, {
               y: 0,
               duration: 0.6,
-              ease: "bounce.out"
+              ease: "bounce.out",
             })
             .to(book, {
               x: 0,
-              rotation: -10,
+              rotation: index === 2 ? -10 : index === 1 ? -10 : 0,
               duration: 0.8,
               ease: "power3.out",
               delay: 0.3,
-              zIndex: 1
+              zIndex: 1,
             });
 
           bookAnimations[index] = tl;
@@ -170,19 +175,17 @@ const Hero = () => {
 
     return () => {
       window.removeEventListener("mousemove", handleBookHover);
-      bookAnimations.forEach(anim => anim?.kill());
+      bookAnimations.forEach((anim) => anim?.kill());
     };
   }, []);
 
   const addBookRef = (el: HTMLImageElement | null) => {
-    if (el && !booksRef.current.includes(el)) {
-      booksRef.current.push(el);
-    }
+    if (el && !booksRef.current.includes(el)) booksRef.current.push(el);
   };
 
-  /* ===============================
-     RENDER
-  =============================== */
+  // ======================================================
+  // RETURN UI
+  // ======================================================
   return (
     <section
       ref={container}
