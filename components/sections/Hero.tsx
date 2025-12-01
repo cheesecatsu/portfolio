@@ -65,8 +65,9 @@ const Hero = () => {
   // LAMPU PENDULUM SUPER SMOOTH - FIX PIVOT & OFFSIDE
   // ======================================================
   useEffect(() => {
-    const lamp = lampRef.current;
-    if (!lamp) return;
+  const lamp = lampRef.current;
+  if (!lamp) return undefined; 
+
 
     // FIX UTAMA: pivot harus di titik tali
     gsap.set(lamp, { transformOrigin: "50% 0%" });
@@ -113,7 +114,9 @@ const Hero = () => {
 
     requestAnimationFrame(animate);
 
-    return () => idleSwing.kill();
+    return () => {
+    idleSwing.kill();
+    };
   }, []);
 
   // ==================================================
